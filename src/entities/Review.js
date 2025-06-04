@@ -1,0 +1,15 @@
+export const reviewDTO = {
+    id: null,
+    title: '',
+    text: '',
+    authorId: null,
+    authorName: '',
+    authorAvatarUrl: '',
+    novelId: null,
+    imageNovelUrl: '',
+    sentiment: '',
+    likes: 0,
+    views: 0,
+    criteria: [],
+    createdAt: '',
+};

@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  img {
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+  
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: #c0c0c0;
+    border-radius: 8px;
+  }
+  
+  body {
+    scrollbar-width: thin;
+    scrollbar-color: #c0c0c0 transparent;
+  }
+
+  .comment:last-child {
+  margin-bottom: 0;
+}
