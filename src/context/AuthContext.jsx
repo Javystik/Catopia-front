@@ -10,18 +10,20 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const setTokens = (accessToken, refreshToken) => {
+    setAccessToken(accessToken);
+    localStorage.setItem('refreshToken', refreshToken); // Зберігаємо refreshToken
+  };
+
   const fetchUser = async () => {
     try {
-      const tokenRes = await api.post('/auth/refresh');
-      const token = tokenRes.data;
-      setAccessToken(token);
-
       const userRes = await api.get('/auth/me');
       setUser(userRes.data);
     } catch (error) {
       if (error.response?.status === 401 || error.response?.status === 403) {
         setUser(null);
         setAccessToken(null);
+        localStorage.removeItem('refreshToken');
         const protectedRoutes = ['/dashboard', '/profile'];
         if (protectedRoutes.includes(location.pathname)) {
           navigate('/login', { state: { from: location.pathname } });
@@ -33,7 +35,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchUser();
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (refreshToken) {
+      // Спробуємо оновити токен при завантаженні
+      api
+        .post('/auth/refresh', { refreshToken })
+        .then((res) => {
+          setTokens(res.data.accessToken, res.data.refreshToken);
+          fetchUser();
+        })
+        .catch(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const logout = async () => {
@@ -41,6 +57,7 @@ export const AuthProvider = ({ children }) => {
       await api.post('/auth/logout');
       setUser(null);
       setAccessToken(null);
+      localStorage.removeItem('refreshToken');
       navigate('/');
     } catch (err) {
       console.error('Помилка logout:', err);
@@ -48,7 +65,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout, fetchUser }}>
+    <AuthContext.Provider value={{ user, loading, logout, fetchUser, setTokens }}>
       {children}
     </AuthContext.Provider>
   );

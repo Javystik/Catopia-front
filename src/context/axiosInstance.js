@@ -1,4 +1,3 @@
-// auth/axiosInstance.js
 import axios from 'axios';
 import { API_BASE_URL } from '../config/config';
 
@@ -21,18 +20,23 @@ api.interceptors.response.use(
   async (err) => {
     if (err.response?.status === 401 && !err.config._retry) {
       err.config._retry = true;
+      const refreshToken = localStorage.getItem('refreshToken');
 
-      try {
-        const refreshRes = await axios.post(
-          `${API_BASE_URL}/auth/refresh`,
-          null,
-          { withCredentials: true }
-        );
-        accessToken = refreshRes.data;
-        err.config.headers.Authorization = `Bearer ${accessToken}`;
-        return api(err.config);
-      } catch (refreshErr) {
-        return Promise.reject(refreshErr);
+      if (refreshToken) {
+        try {
+          const refreshRes = await axios.post(
+            `${API_BASE_URL}/auth/refresh`,
+            { refreshToken },
+            { withCredentials: true }
+          );
+          accessToken = refreshRes.data.accessToken;
+          localStorage.setItem('refreshToken', refreshRes.data.refreshToken);
+          err.config.headers.Authorization = `Bearer ${accessToken}`;
+          return api(err.config);
+        } catch (refreshErr) {
+          localStorage.removeItem('refreshToken');
+          return Promise.reject(refreshErr);
+        }
       }
     }
     return Promise.reject(err);

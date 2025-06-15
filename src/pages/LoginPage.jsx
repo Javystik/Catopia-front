@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { fetchUser } = useAuth();
+  const { fetchUser, setTokens } = useAuth(); // Додаємо setTokens з AuthContext
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: '',
@@ -76,14 +76,15 @@ const LoginPage = () => {
         credentials: 'include',
         body: JSON.stringify({
           username: formData.username || null,
-          email: formData.email || null,
-          password: formData.password || null,
+          email: formData.email,
+          password: formData.password,
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        if (data.error && !isLogin) {
+        if (!isLogin && data === 'Користувач з таким email або ім\'ям вже існує') {
           notify('error', 'Електронна пошта або ім’я користувача вже використовується');
         } else {
           notify('error', isLogin ? 'Неправильна пошта або пароль' : 'Помилка реєстрації');
@@ -91,14 +92,34 @@ const LoginPage = () => {
         return;
       }
 
+      // Зберігаємо токени
+      setTokens(data.accessToken, data.refreshToken);
       await fetchUser();
       notify('success', isLogin ? 'Успішний вхід!' : 'Реєстрація успішна!');
       navigate('/');
     } catch (error) {
       console.error('Error:', error);
-      notify('error', 'Неправильна пошта або пароль.');
+      notify('error', 'Щось пішло не так. Спробуйте ще раз.');
     }
   };
+
+  // Обробка OAuth2 редиректу
+  const handleOAuthRedirect = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get('accessToken');
+    const refreshToken = urlParams.get('refreshToken');
+
+    if (accessToken && refreshToken) {
+      setTokens(accessToken, refreshToken);
+      await fetchUser();
+      notify('success', 'Успішний вхід через соцмережу!');
+      navigate('/');
+    }
+  };
+
+  React.useEffect(() => {
+    handleOAuthRedirect();
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 relative">
