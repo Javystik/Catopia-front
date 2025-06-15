@@ -1,12 +1,13 @@
+// auth/axiosInstance.js
 import axios from 'axios';
 import { API_BASE_URL } from '../config/config';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: false, // Вимикаємо withCredentials, оскільки cookies не використовуються
+  withCredentials: true,
 });
 
-let accessToken = localStorage.getItem('accessToken');
+let accessToken = null;
 
 api.interceptors.request.use((config) => {
   if (accessToken) {
@@ -22,19 +23,15 @@ api.interceptors.response.use(
       err.config._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
         const refreshRes = await axios.post(
           `${API_BASE_URL}/auth/refresh`,
-          { refreshToken }
+          null,
+          { withCredentials: true }
         );
-        accessToken = refreshRes.data.accessToken;
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshRes.data.refreshToken);
+        accessToken = refreshRes.data;
         err.config.headers.Authorization = `Bearer ${accessToken}`;
         return api(err.config);
       } catch (refreshErr) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
         return Promise.reject(refreshErr);
       }
     }
@@ -44,7 +41,6 @@ api.interceptors.response.use(
 
 export const setAccessToken = (token) => {
   accessToken = token;
-  localStorage.setItem('accessToken', token);
 };
 
 export default api;

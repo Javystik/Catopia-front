@@ -12,19 +12,16 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = async () => {
     try {
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken) {
-        throw new Error('No access token');
-      }
-      setAccessToken(accessToken);
+      const tokenRes = await api.post('/auth/refresh');
+      const token = tokenRes.data;
+      setAccessToken(token);
 
       const userRes = await api.get('/auth/me');
       setUser(userRes.data);
     } catch (error) {
       if (error.response?.status === 401 || error.response?.status === 403) {
         setUser(null);
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        setAccessToken(null);
         const protectedRoutes = ['/dashboard', '/profile'];
         if (protectedRoutes.includes(location.pathname)) {
           navigate('/login', { state: { from: location.pathname } });
@@ -39,38 +36,11 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, []);
 
-  const login = async (email, password) => {
-    try {
-      const response = await api.post('/auth/login', { email, password });
-      const { accessToken, refreshToken } = response.data;
-      setAccessToken(accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      await fetchUser();
-    } catch (err) {
-      console.error('Помилка логіну:', err);
-      throw err;
-    }
-  };
-
-  const register = async (username, email, password) => {
-    try {
-      const response = await api.post('/auth/register', { username, email, password });
-      const { accessToken, refreshToken } = response.data;
-      setAccessToken(accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      await fetchUser();
-    } catch (err) {
-      console.error('Помилка реєстрації:', err);
-      throw err;
-    }
-  };
-
   const logout = async () => {
     try {
       await api.post('/auth/logout');
       setUser(null);
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      setAccessToken(null);
       navigate('/');
     } catch (err) {
       console.error('Помилка logout:', err);
@@ -78,7 +48,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, fetchUser }}>
+    <AuthContext.Provider value={{ user, loading, logout, fetchUser }}>
       {children}
     </AuthContext.Provider>
   );
