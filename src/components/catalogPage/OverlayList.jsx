@@ -71,7 +71,7 @@ export default function OverlayList({
           <span className="material-icons" style={{ fontSize: '16px' }}>
             close
           </span>
-          Сбросити
+          Скинути
         </button>
       </div>
 
