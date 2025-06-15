@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getNovelDetailById } from '../../api/novelApi';
 import { Link } from 'react-router-dom';
@@ -8,18 +8,28 @@ export default function CatalogNovelCard({ Novel, rating }) {
   const [novelDetails, setNovelDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSkeleton, setShowSkeleton] = useState(false);
+  const [isPositionRight, setIsPositionRight] = useState(true);
   const hoverTimer = useRef(null);
   const leaveTimer = useRef(null);
-
-  motion;
+  const cardRef = useRef(null);
 
   if (!Novel?.titleUk || !Novel?.coverUrl) {
     return null;
   }
 
+  const checkPosition = () => {
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const spaceLeft = viewportWidth - rect.right;
+      setIsPositionRight(spaceLeft >= 340);
+    }
+  };
+
   const handleEnter = () => {
     clearTimeout(leaveTimer.current);
     setShowSkeleton(true);
+    checkPosition();
     hoverTimer.current = setTimeout(() => {
       setShowInfo(true);
       fetchNovelDetails();
@@ -55,6 +65,7 @@ export default function CatalogNovelCard({ Novel, rating }) {
 
   return (
     <div
+      ref={cardRef}
       className="relative flex flex-col bg-white rounded-2xl cursor-pointer max-w-[180px]"
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
@@ -93,11 +104,11 @@ export default function CatalogNovelCard({ Novel, rating }) {
       <AnimatePresence>
         {(showInfo || showSkeleton) && (
           <motion.div
-            initial={{ opacity: 0, x: 10 }}
+            initial={{ opacity: 0, x: isPositionRight ? 10 : -10 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
+            exit={{ opacity: 0, x: isPositionRight ? 10 : -10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="absolute top-0 left-[calc(100%+12px)] w-[340px] p-5 bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-2xl z-20 border border-gray-100"
+            className={`absolute top-0 ${isPositionRight ? 'left-[calc(100%+12px)]' : 'right-[calc(100%+12px)]'} w-[340px] p-5 bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-2xl z-50 border border-gray-100`} // Зміна z-index
           >
             {isLoading || !novelDetails ? (
               <div className="flex flex-col gap-3">
