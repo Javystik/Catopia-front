@@ -142,7 +142,7 @@ const Search = ({
                 {searchResults.map((novel) => (
                   <Link
                     key={novel.id}
-                    to={`/novels/${novel.slug}/${novel.id}`}
+                    to={`/novel/${novel.slug}/${novel.id}`}
                     className="flex p-3 bg-gray-50 rounded-lg shadow-sm hover:shadow-md hover:bg-gray-100 transition-all duration-200"
                     onClick={handleClose}
                   >
